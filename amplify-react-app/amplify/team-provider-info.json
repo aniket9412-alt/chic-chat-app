@@ -1,0 +1,15 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chicchat-dev-192543-authRole",
+      "UnauthRoleArn": "arn:aws:iam::126127302810:role/amplify-chicchat-dev-192543-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::126127302810:role/amplify-chicchat-dev-192543-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-chicchat-dev-192543-deployment",
+      "UnauthRoleName": "amplify-chicchat-dev-192543-unauthRole",
+      "StackName": "amplify-chicchat-dev-192543",
+      "StackId": "arn:aws:cloudformation:ap-south-1:126127302810:stack/amplify-chicchat-dev-192543/3aa31340-21f6-11ec-bf1c-02aeadfe26f8",
+      "AmplifyAppId": "d1oclf3lhlvkvm"
+    }
+  }
+}
