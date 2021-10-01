@@ -5,9 +5,9 @@ import API, { graphqlOperation } from '@aws-amplify/api';
 import '@aws-amplify/pubsub';
 import ApolloClient from 'apollo-boost';
 import { ApolloProvider } from 'react-apollo';
-import { createMessage } from './graphql/mutations';
+import { createMessage, createChat } from './graphql/mutations';
 import { onCreateMessage } from './graphql/subscriptions';
-import { messagesByChannelID } from './graphql/queries';
+import { messagesByChannelID, listUsers } from './graphql/queries';
 import { InputGroup, Button, FormControl, CloseButton } from 'react-bootstrap'
 import Avatar from '@mui/material/Avatar';
 import Dhoni from './assets/dhoni.jpg'
@@ -17,24 +17,67 @@ import MoodIcon from '@mui/icons-material/Mood';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import CloseIcon from '@mui/icons-material/Close';
 import awsExports from './aws-exports';
+import { userLoginByUsernamePassword, listChats } from "./graphql/queries"
+
 import './App.css';
 import Login from './Login';
 
 Amplify.configure(awsExports);
 
-const client = new ApolloClient({
-  uri: "https://48p1r2roz4.sse.codesandbox.io"
-});
+// const client = new ApolloClient({
+//   uri: "https://48p1r2roz4.sse.codesandbox.io"
+// });
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [messageBody, setMessageBody] = useState('');
   const [login, setLogin] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [userName, setUserName] = useState('')
+  const [userListData, setUserListData] = useState([]);
+  const [chatId, setChatId] = useState('');
+
+  const handleSubmitLogin = (e, email, password) => {
+    // e.preventDefault();
+    // console.log(email);
+    // console.log(password);
+
+    const pass = {
+      eq: password
+    }
+    API
+      .graphql(graphqlOperation(userLoginByUsernamePassword, {
+        userName: email,
+        password: pass
+      }))
+      .then((response) => {
+        const items = response?.data?.userLoginByUsernamePassword?.items[0];
+        setUserId(items.id);
+        setUserName(items.name);
+      })
+    handleLogin();
+    // console.log(res)
+  }
+  console.log(userId)
+  console.log(userName)
+  useEffect(() => {
+    if (login) {
+      API
+        .graphql(graphqlOperation(listUsers))
+        .then((response) => {
+          const userList = response?.data?.listUsers?.items;
+          console.log(userList)
+          setUserListData(userList)
+
+        })
+    }
+  }, [login])
+  console.log(userListData)
 
   useEffect(() => {
     API
       .graphql(graphqlOperation(messagesByChannelID, {
-        channelID: '3',
+        channelID: chatId,
         sortDirection: 'ASC'
       }))
       .then((response) => {
@@ -44,7 +87,7 @@ function App() {
           setMessages(items);
         }
       })
-  }, []);
+  }, [chatId]);
 
   useEffect(() => {
     const subscription = API
@@ -69,8 +112,8 @@ function App() {
     event.stopPropagation();
 
     const input = {
-      channelID: '3',
-      author: 'Dave',
+      channelID: chatId,
+      author: userId,
       body: messageBody.trim()
     };
 
@@ -90,11 +133,7 @@ function App() {
   const [message, setMessage] = useState([]);
   const [showBox, setShowBox] = useState(false);
   const [shownToggle, setShownToggle] = useState(true);
-  const [Udata, setData] = useState([
-    { id: "1", name: "Srikanth" },
-    { id: "2", name: "Ravi" },
-    { id: "3", name: "Aniket" }
-  ]);
+
   const [currentRec, setCurrentRec] = useState(undefined);
 
   const showBoxs = (i, pid, name) => {
@@ -105,6 +144,49 @@ function App() {
       //     document.addEventListener('click', closeBox);
       // }
     );
+    console.log(pid, name)
+
+    API
+      .graphql(graphqlOperation(listChats, {
+        filter: {
+          or: [
+            {
+              user1: { eq: userId }, user2: { eq: pid }
+            },
+            {
+              user1: { eq: pid }, user2: { eq: userId }
+            }
+          ]
+        }
+      }))
+      .then((response) => {
+        const filterItem = response?.data?.listChats?.items;
+        const UserChatId = filterItem[0];
+        console.log(UserChatId)
+        if(UserChatId !== undefined) {
+          setChatId(JSON.stringify(UserChatId.id));
+          console.log("Filter chat " + JSON.stringify(UserChatId.id));
+        }
+        else {
+          console.log("there is no id" + filterItem)
+         
+          const input = {
+            user1: userId,
+            user2: pid,
+          };
+      console.log(input)
+          try {
+             API.graphql(graphqlOperation(createChat, { input }))
+            .then((response) => {
+              console.log(JSON.stringify(response.data.createChat.id));
+              setChatId(JSON.stringify(response.data.createChat.id));
+            }) 
+          } catch (error) {
+            console.warn(error);
+          }
+        }
+       
+      })
   }
 
   const handleMessage = (e) => {
@@ -137,72 +219,47 @@ function App() {
   }
 
   return (
-    // <div>
-    //   {(login ?
+    <>
+      {/*  <ApolloProvider client={client}> */}
+      {login ?
+        <div>
+          <center><h3>Welcome {userName}</h3></center>
+          <ul style={{ float: "right" }}>
+            {userListData.map((person, i) => (userId === person.id ? null :
+              <div className="chat-sidebar" key={i}>
+                <button onClick={() => showBoxs(i, person.id, person.name)}>Chat with {person.name}</button>
+                {showBox ? (
+                  <div className="msg_box" style={{ right: '270px' }}>
+                    <div className="msg_head"
+                    //  onClick={this.toggle.bind(this)}
+                    >
 
-    // <div className="container">
-    //   <div className="messages">
-    //     <div className="messages-scroller">
-    //       {messages.map((message) => (
-    //         <div
-    //           key={message.id}
-    //           className={message.author === 'Dave' ? 'message me' : 'message'}>{message.body}</div>
-    //       ))}
-    //     </div>
-    //   </div>
-    //   <div className="chat-bar">
-    //     <form onSubmit={handleSubmit}>
-    //       <input
-    //         type="text"
-    //         name="message"
-    //         placeholder="Type your message here..."
-    //         onChange={handleChange}
-    //         value={messageBody} />
-    //     </form>
-    //   </div>
-    // </div>
-    // : <Login handleLogin={handleLogin} />
-    // )}
-    // </div>
-    <ApolloProvider client={client}>
-{login ? 
-    <div>
-      <ul style={{ float: "right" }}>
-        {Udata.map((person, i) => (
-          <div className="chat-sidebar" key={i}>
-            <button onClick={() => showBoxs(i, person.id, person.name)}>Chat with {person.name}</button>
-            {showBox ? (
-              <div className="msg_box" style={{ right: '270px' }}>
-                <div className="msg_head"
-                //  onClick={this.toggle.bind(this)}
-                >
+                      <div className="one">
+                        <b>
+                          {currentRec !== undefined &&
+                            <div className="modal-body">
+                              <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
+                              {/* {this.state.data[this.state.currentRec].name} */}
 
-                  <div className="one">
-                    <b>
-                      {currentRec !== undefined &&
-                        <div className="modal-body">
-                          <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
-                          {/* {this.state.data[this.state.currentRec].name} */}
-
-                          {/* ({this.state.data[this.state.currentRec].id}) */}
-                        </div>
-                      }
-                    </b>
-                  </div>
-                  <div className="two">
-                    {currentRec !== undefined &&
-                      <div>
-                        {Udata[currentRec].name}
+                              {/* ({this.state.data[this.state.currentRec].id}) */}
+                            </div>
+                          }
+                        </b>
                       </div>
-                    }
-                  </div>
-                  <div className="three"><span className="calender"><EventNoteIcon /></span></div>
-                  {/* <div ><span className="min" onClick={this.toggle.bind(this)}>_</span></div> */}
-                  <div className="four"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div>
+                      <div className="two">
+                        {currentRec !== undefined &&
+                          <div>
+                            {userListData[currentRec].name}
+                          </div>
+                        }
+                      </div>
+                      <div className="three"><span className="calender"><EventNoteIcon /></span></div>
+                      {/* <div ><span className="min" onClick={this.toggle.bind(this)}>_</span></div> */}
+                      <div className="four"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div>
 
-                </div>
-                <div style={hidden} className="msg_wrap"><div className="msg_body">
-                  {/* {
+                    </div>
+                    <div style={hidden} className="msg_wrap"><div className="msg_body">
+                      {/* {
                             data.rates.map(({ currency, rate }, i) => (
                                 <div className="paraDiv" key={i}>
                                     <p style={{ display: 'flex', marginTop: '20px' }}>
@@ -215,7 +272,7 @@ function App() {
                             ))
                         } */}
 
-                  {/* {
+                      {/* {
                     message.map((message, i) => (
                       <div className="paraDiv" key={i}>
                         <p style={{ display: 'flex', marginTop: '20px' }}>
@@ -227,42 +284,43 @@ function App() {
                       </div>
                     ))
                   } */}
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      >
-                        {/* {message.body} */}
-                        <p style={{ display: 'flex', marginTop: '20px' }}>
-                          <span style={{ marginRight: '6px' }}>{message.author === 'Dave' ? <Avatar alt="Srikanth Ganji" sx={{ width: 30, height: 30 }} src={Dhoni} /> : null}</span>
-                          <span className={message.author === 'Dave' ? 'text' : 'textRight'}> {message.body} </span>
-                          <span style={{ marginLeft: '6px' }}>{message.author === 'Dave' ? null : <Avatar alt="Srikanth Ganji" src={Ms} />}</span>
+                      {messages.map((message) => (
+                        <div
+                          key={message.id}
+                        >
+                          {/* {message.body} */}
+                          <p style={{ display: 'flex', marginTop: '20px' }}>
+                            <span style={{ marginRight: '6px' }}>{message.author === userId ? <Avatar alt="Srikanth Ganji" sx={{ width: 30, height: 30 }} src={Dhoni} /> : null}</span>
+                            <span className={message.author === userId ? 'text' : 'textRight'}> {message.body} </span>
+                            <span style={{ marginLeft: '6px' }}>{message.author === userId ? null : <Avatar alt="Srikanth Ganji" src={Ms} />}</span>
 
-                        </p>
+                          </p>
                         </div>
-                  ))}
-                </div>
-                </div>
-                <hr />
-                <div className="msgBtm">
-                  <InputGroup className="inputGroup">
-                    <FormControl
-                      className="formControl"
-                      placeholder="Type here!"
-                      onChange={handleChange}
-                      value={messageBody}
-                    // aria-label="Recipient's username with two button addons"
-                    />
-                    <span className="emoji"><MoodIcon /></span>
-                    <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
-                  </InputGroup>
-                </div>
-              </div>) : (null)}
-          </div>
-        ))}
-      </ul>
-    </div>
-     : <Login handleLogin={handleLogin} />}
-     </ApolloProvider>
+                      ))}
+                    </div>
+                    </div>
+                    <hr />
+                    <div className="msgBtm">
+                      <InputGroup className="inputGroup">
+                        <FormControl
+                          className="formControl"
+                          placeholder="Type here!"
+                          onChange={handleChange}
+                          value={messageBody}
+                        // aria-label="Recipient's username with two button addons"
+                        />
+                        <span className="emoji"><MoodIcon /></span>
+                        <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
+                      </InputGroup>
+                    </div>
+                  </div>) : (null)}
+              </div>
+            ))}
+          </ul>
+        </div>
+        : <Login handleLogin={handleLogin} handleSubmitLogin={handleSubmitLogin} />}
+      {/*   </ApolloProvider> */}
+    </>
   );
 }
 

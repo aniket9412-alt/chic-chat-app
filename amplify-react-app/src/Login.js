@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useQuery } from '@apollo/react-hooks';
-import gql from "graphql-tag";
-
+// import { useQuery } from '@apollo/react-hooks';
+// import gql from "graphql-tag";
+import API, { graphqlOperation } from '@aws-amplify/api';
+import { userLoginByUsernamePassword } from "./graphql/queries"
 // const GQL_DATA = gql`
 // query mul {
 //   rates(currency: "AUD") {
@@ -14,47 +15,55 @@ import gql from "graphql-tag";
 const Login = (props) => {
   // const { data, loading, error } = useQuery(GQL_DATA);
   // console.log(data)
-    const [email, setEmail] = useState()
-    const [password, setPassword] = useState()
-    const {handleLogin} = props;
+  const [email, setEmail] = useState()
+  const [password, setPassword] = useState()
+  const { handleLogin, handleSubmitLogin } = props;
   const handleEmail = (e) => {
     setEmail(e.target.value);
   }
   const handlePassword = (e) => {
     setPassword(e.target.value);
   }
- const handleSubmit = (e) => {
-    e.preventDefault();
-    handleLogin();
-    console.log(email);
-    console.log(password);
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   console.log(email);
+  //   console.log(password);
 
-    API
-    .graphql(graphqlOperation(messagesByChannelID, {
-      channelID: '3',
-      sortDirection: 'ASC'
-    }))
-  }
+  //   const pass = {
+  //     eq: password
+  //   }
+  //    API
+  //     .graphql(graphqlOperation(userLoginByUsernamePassword, {
+  //       userName: email,
+  //       password: pass
+  //     }))
+  //     .then((response) => {
+  //       const items = response?.data?.userLoginByUsernamePassword?.items[0];
+  //       console.log(items)
+      
+  //     })
+  //   handleLogin();
+  // }
 
   return (
     <div style={{ padding: 30 }}>
-        <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-      <label>
-          
+      <h2>Login</h2>
+      <form onSubmit={() => handleSubmitLogin(email, password)}>
+        <label>
+
           <input
-            type="email"
+            type="text"
             name="email"
             placeholder="email"
             onChange={handleEmail}
             required
-            // ref={node => (this.inputNode = node)}
+          // ref={node => (this.inputNode = node)}
           />
-         
+
         </label>
         <br />
         <label>
-         
+
           <input
             type="password"
             name="password"
@@ -62,9 +71,9 @@ const Login = (props) => {
             onChange={handlePassword}
             required
           />
-         
+
         </label>
-       <br />
+        <br />
         <button type="submit">Submit</button>
       </form>
     </div>
