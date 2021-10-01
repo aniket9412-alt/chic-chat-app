@@ -121,3 +121,32 @@ export const messagesByChannelID = /* GraphQL */ `
     }
   }
 `;
+export const userLoginByUsernamePassword = /* GraphQL */ `
+  query UserLoginByUsernamePassword(
+    $userName: String
+    $password: ModelStringKeyConditionInput
+    $sortDirection: ModelSortDirection
+    $filter: ModelUserFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    userLoginByUsernamePassword(
+      userName: $userName
+      password: $password
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        userName
+        password
+        name
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
