@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import Amplify from '@aws-amplify/core';
 import API, { graphqlOperation } from '@aws-amplify/api';
@@ -18,6 +18,8 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import CloseIcon from '@mui/icons-material/Close';
 import awsExports from './aws-exports';
 import { userLoginByUsernamePassword, listChats } from "./graphql/queries"
+import { Typography } from '@mui/material';
+import Badge from '@mui/material/Badge';
 
 import './App.css';
 import Login from './Login';
@@ -37,10 +39,17 @@ function App() {
   const [userListData, setUserListData] = useState([]);
   const [chatId, setChatId] = useState('');
 
-  const handleSubmitLogin = (e, email, password) => {
-    // e.preventDefault();
-    // console.log(email);
-    // console.log(password);
+  const handleLogin = () => {
+    setLogin(true)
+  }
+
+  useEffect(() => {
+    if (userId.length > 0) {
+      setLogin(true)
+    }
+  }, [userId])
+
+  const handleSubmitLogin = (email, password) => {
 
     const pass = {
       eq: password
@@ -54,12 +63,20 @@ function App() {
         const items = response?.data?.userLoginByUsernamePassword?.items[0];
         setUserId(items.id);
         setUserName(items.name);
+        console.log("Login")
+
+      })
+      .catch((error) => {
+        console.log("UserName/Password is Wrong!")
       })
     handleLogin();
-    // console.log(res)
+
   }
+
+
   console.log(userId)
   console.log(userName)
+  console.log(login)
   useEffect(() => {
     if (login) {
       API
@@ -70,8 +87,42 @@ function App() {
           setUserListData(userList)
 
         })
+      console.log(userListData.length)
     }
+
+
   }, [login])
+
+  // useEffect(() => {
+  //   if (userListData) {
+  //     console.log("UserList " + userListData.length)
+  //     {for(let i=0; i< userListData.length; i++){
+        
+  //     API
+  //     .graphql(graphqlOperation(listChats, {
+  //       filter: {
+  //         or: [
+  //           {
+  //             user1: { eq: userId }, user2: { eq: userListData[i]?.id }
+  //           },
+  //           {
+  //             user1: { eq: userListData[i]?.id }, user2: { eq: userId }
+  //           }
+  //         ]
+  //       }
+  //     }))
+  //     .then((response) => {
+  //       console.log("Checking user Response " + JSON.stringify(response?.data?.listChats?.items[0]?.id))
+  //       // let UserCHid = JSON.stringify(response?.data?.listChats?.items[0]?.id); // need to check with user1 or user2
+  //       // for(let j=0; j< userListData.length; j++){
+  //       //   if(userListData[j].id == UserCHid){
+
+  //       //   }
+  //       // }
+  //     })
+  //   }}
+  //   }
+  // }, [userListData])
   console.log(userListData)
 
   useEffect(() => {
@@ -125,9 +176,7 @@ function App() {
     }
   };
 
-  const handleLogin = () => {
-    setLogin(true)
-  }
+
   //mine
   const [newMsg, setNewMsg] = useState()
   const [message, setMessage] = useState([]);
@@ -140,9 +189,6 @@ function App() {
     setCurrentRec(i);
     console.log(`Selected record index: ${i}`);
     setShowBox({ showBox: true }
-      //     , () => {
-      //     document.addEventListener('click', closeBox);
-      // }
     );
     console.log(pid, name)
 
@@ -163,60 +209,66 @@ function App() {
         const filterItem = response?.data?.listChats?.items;
         const UserChatId = filterItem[0];
         console.log(UserChatId)
-        if(UserChatId !== undefined) {
+        if (UserChatId !== undefined) {
           setChatId(JSON.stringify(UserChatId.id));
           console.log("Filter chat " + JSON.stringify(UserChatId.id));
         }
         else {
           console.log("there is no id" + filterItem)
-         
+
           const input = {
             user1: userId,
             user2: pid,
           };
-      console.log(input)
+          console.log(input)
           try {
-             API.graphql(graphqlOperation(createChat, { input }))
-            .then((response) => {
-              console.log(JSON.stringify(response.data.createChat.id));
-              setChatId(JSON.stringify(response.data.createChat.id));
-            }) 
+            API.graphql(graphqlOperation(createChat, { input }))
+              .then((response) => {
+                console.log(JSON.stringify(response.data.createChat.id));
+                setChatId(JSON.stringify(response.data.createChat.id));
+              })
           } catch (error) {
             console.warn(error);
           }
         }
-       
+
       })
   }
 
-  const handleMessage = (e) => {
-    e.preventDefault();
-    console.log(e.target.value)
-    setNewMsg(e.target.value);
+
+
+  // const toggle = () => {
+  //   setShownToggle({
+  //     shownToggle: !shownToggle
+  //   });
+  // }
+
+
+  const messagesEndRef = useRef(null)
+
+  const scrollToBottom = () => {
+    console.log("ref")
+    messagesEndRef?.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  const handleSendMessage = (e) => {
-    setMessage(message => [...message, newMsg])
-    console.log(message[0] + " with send")
-    setNewMsg('');
-  }
-  //    const closeBox = (event) => {
-  //         if (dropdownBox.contains(event.target)) {
-  //             setShowBox({ showBox: false }
-  //                 , () => {
-  //                 document.removeEventListener('click', closeBox);
-  //             });
-  //         }
-  //     }
-  const toggle = () => {
-    setShownToggle({
-      shownToggle: !shownToggle
-    });
-  }
+  // useEffect(() => {
+  //   scrollToBottom()
+  // }, [messages])
+
+  useEffect(() => {
+    scrollToBottom();
+    return () => {
+      scrollToBottom();
+    }
+  }, [messages])
 
   var hidden = {
     display: shownToggle ? "block" : "none"
   }
+
+  console.log(userListData)
+
+
 
   return (
     <>
@@ -225,100 +277,128 @@ function App() {
         <div>
           <center><h3>Welcome {userName}</h3></center>
           <ul style={{ float: "right" }}>
-            {userListData.map((person, i) => (userId === person.id ? null :
-              <div className="chat-sidebar" key={i}>
-                <button onClick={() => showBoxs(i, person.id, person.name)}>Chat with {person.name}</button>
-                {showBox ? (
-                  <div className="msg_box" style={{ right: '270px' }}>
-                    <div className="msg_head"
-                    //  onClick={this.toggle.bind(this)}
-                    >
+            <div className="chatList">
+              <div className="chatHeader">
+                <div className="chatSection"> Chat </div>
+                {/* <div className="closeIco"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div> */}
+              </div>
 
-                      <div className="one">
-                        <b>
-                          {currentRec !== undefined &&
-                            <div className="modal-body">
-                              <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
-                              {/* {this.state.data[this.state.currentRec].name} */}
-
-                              {/* ({this.state.data[this.state.currentRec].id}) */}
-                            </div>
-                          }
-                        </b>
+              <div className="AllChatUsers ">
+                {userListData.map((person, i) => (userId === person.id ? null :
+                  <div key={i}>
+                    <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name); scrollToBottom(); }}>
+                      <Badge badgeContent={i} color="warning" className="userChatAvaster">
+                        <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
+                      </Badge>
+                      <div className="personModel">
+                        <h4>{person.name}</h4>
+                        <p className="userPara">Des</p>
+                        {/* <hr /> */}
                       </div>
-                      <div className="two">
+                    </div>
+                    <hr className="hrForChat" />
+                  </div>))}
+              </div>
+            </div>
+
+            {/* Start Chat with  */}
+            <div className="chatList">
+              <div className="chatHeader">
+                <div className="chatSection">Start Chat </div>
+                {/* <div className="closeIco"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div> */}
+              </div>
+
+              <div className="AllChatUsers ">
+                {userListData.map((person, i) => (userId === person.id ? null :
+                  <div key={i}>
+                    <div className="chat-sidebar">
+                      <Avatar className="userChatAvaster" alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
+                      <div className="personModel" onClick={() => showBoxs(i, person.id, person.name)}>
+                        <h4>{person.name}</h4>
+                        <p className="userPara">Des</p>
+                        {/* <hr /> */}
+                      </div>
+                    </div>
+                    <hr className="hrForChat" />
+                  </div>))}
+              </div>
+            </div>
+
+            {/* {userListData.map((person, i) => (userId === person.id ? null : */}
+            <div>
+              {/* <button onClick={() => showBoxs(i, person.id, person.name)}>{person.name}</button> */}
+              {showBox ? (
+                <div className="msg_box" style={{ right: '300px' }}>
+                  <div className="msg_head"
+                  //  onClick={this.toggle.bind(this)}
+                  >
+
+                    <div className="one">
+                      <b>
                         {currentRec !== undefined &&
-                          <div>
-                            {userListData[currentRec].name}
+                          <div className="modal-body">
+                            <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
+                            {/* {this.state.data[this.state.currentRec].name} */}
+
+                            {/* ({this.state.data[this.state.currentRec].id}) */}
                           </div>
                         }
-                      </div>
-                      <div className="three"><span className="calender"><EventNoteIcon /></span></div>
-                      {/* <div ><span className="min" onClick={this.toggle.bind(this)}>_</span></div> */}
-                      <div className="four"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div>
-
+                      </b>
                     </div>
-                    <div style={hidden} className="msg_wrap"><div className="msg_body">
-                      {/* {
-                            data.rates.map(({ currency, rate }, i) => (
-                                <div className="paraDiv" key={i}>
-                                    <p style={{ display: 'flex', marginTop: '20px' }}>
-                                        <span style={{ marginRight: '6px' }}>{i % 2 == 0 ? <Avatar alt="Srikanth Ganji" sx={{ width: 30, height: 30 }} src={Dhoni} /> : null}</span>
-                                        <span className={i % 2 == 0 ? "text" : "textRight"}> {currency}: {rate} </span>
-                                        <span style={{ marginLeft: '6px' }}>{i % 2 == 0 ? null : <Avatar alt="Srikanth Ganji" src={Ms} />}</span>
+                    <div className="two">
+                      {currentRec !== undefined &&
+                        <div>
+                          {userListData[currentRec].name}
+                        </div>
+                      }
+                    </div>
+                    <div className="three"><span className="calender"><EventNoteIcon /></span></div>
+                    {/* <div ><span className="min" onClick={this.toggle.bind(this)}>_</span></div> */}
+                    <div className="four"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div>
 
-                                    </p>
-                                </div>
-                            ))
-                        } */}
+                  </div>
+                  <div style={hidden} className="msg_wrap">
+                    <div className="msg_body">
 
-                      {/* {
-                    message.map((message, i) => (
-                      <div className="paraDiv" key={i}>
-                        <p style={{ display: 'flex', marginTop: '20px' }}>
-                          <span style={{ marginRight: '6px' }}>{i % 2 == 0 ? <Avatar alt="Srikanth Ganji" sx={{ width: 30, height: 30 }} src={Dhoni} /> : null}</span>
-                          <span className={i % 2 == 0 ? "text" : "textRight"}> {message} </span>
-                          <span style={{ marginLeft: '6px' }}>{i % 2 == 0 ? null : <Avatar alt="Srikanth Ganji" src={Ms} />}</span>
-
-                        </p>
-                      </div>
-                    ))
-                  } */}
                       {messages.map((message) => (
                         <div
                           key={message.id}
                         >
+                          {console.log(message.body === null ? "No" : "Yes")}
                           {/* {message.body} */}
-                          <p style={{ display: 'flex', marginTop: '20px' }}>
-                            <span style={{ marginRight: '6px' }}>{message.author === userId ? <Avatar alt="Srikanth Ganji" sx={{ width: 30, height: 30 }} src={Dhoni} /> : null}</span>
-                            <span className={message.author === userId ? 'text' : 'textRight'}> {message.body} </span>
-                            <span style={{ marginLeft: '6px' }}>{message.author === userId ? null : <Avatar alt="Srikanth Ganji" src={Ms} />}</span>
-
-                          </p>
+                          <Typography component={'span'} variant={'body2'}>
+                            <span style={{ display: 'flex', marginTop: '20px' }}>
+                              <span style={{ marginRight: '6px' }}>{message.author === userId ? null : <Avatar alt="Srikanth Ganji" src={Dhoni} />}</span>
+                              <span className={message.author === userId ? 'textRight' : 'text'}><span className={message.author === userId ? 'Smsg' : 'Rmsg'}> {message?.body} </span> </span>
+                              <span style={{ marginLeft: '6px' }}>{message.author === userId ? <Avatar alt="Srikanth Ganji" src={Ms} /> : null}</span>
+                            </span>
+                          </Typography>
                         </div>
                       ))}
+                      <div ref={messagesEndRef} />
+
                     </div>
-                    </div>
-                    <hr />
-                    <div className="msgBtm">
-                      <InputGroup className="inputGroup">
-                        <FormControl
-                          className="formControl"
-                          placeholder="Type here!"
-                          onChange={handleChange}
-                          value={messageBody}
-                        // aria-label="Recipient's username with two button addons"
-                        />
-                        <span className="emoji"><MoodIcon /></span>
-                        <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
-                      </InputGroup>
-                    </div>
-                  </div>) : (null)}
-              </div>
-            ))}
+                  </div>
+                  <hr />
+                  <div className="msgBtm">
+                    <InputGroup className="inputGroup">
+                      <FormControl
+                        className="formControl"
+                        placeholder="Type here!"
+                        onChange={handleChange}
+                        value={messageBody}
+                      // aria-label="Recipient's username with two button addons"
+                      />
+                      <span className="emoji"><MoodIcon /></span>
+                      <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
+                    </InputGroup>
+                  </div>
+                </div>) : (null)}
+            </div>
+            {/* ))} */}
           </ul>
         </div>
-        : <Login handleLogin={handleLogin} handleSubmitLogin={handleSubmitLogin} />}
+        : <Login handleSubmitLogin={handleSubmitLogin} />}
       {/*   </ApolloProvider> */}
     </>
   );
