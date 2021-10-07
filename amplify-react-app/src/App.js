@@ -92,48 +92,48 @@ function App() {
   }, [login])
 
   useEffect(() => {
-      API
-        .graphql(graphqlOperation(listChats, {
-          filter: {
-            or: [
-              {
-                user1: { eq: userId }
-              },
-              {
-                user2: { eq: userId }
-              }
-            ]
-          }
-        }))
-        .then((response) => {
-          console.log(response)
-          console.log(response?.data?.listChats?.items)
-          const ComboObj = response?.data?.listChats?.items;
-          const temp = [];
-          if (userListData.length > 0) {
+    API
+      .graphql(graphqlOperation(listChats, {
+        filter: {
+          or: [
             {
-             userListData.map((uData) => {
-                if (ComboObj.length > 0) {
-                  {
-                 ComboObj.map((singleObj) => {
-                      if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {    
-                        if(userId !== uData.id){
-                        temp.push({...uData, UChannelId : singleObj.id})
-                        }            
-                      }
-                    })
-
-                  }
-                }
-              })
-              console.log(temp, "comboData")
-              setComboData(temp)
-              return temp
+              user1: { eq: userId }
+            },
+            {
+              user2: { eq: userId }
             }
+          ]
+        }
+      }))
+      .then((response) => {
+        console.log(response)
+        console.log(response?.data?.listChats?.items)
+        const ComboObj = response?.data?.listChats?.items;
+        const temp = [];
+        if (userListData.length > 0) {
+          {
+            userListData.map((uData) => {
+              if (ComboObj.length > 0) {
+                {
+                  ComboObj.map((singleObj) => {
+                    if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
+                      if (userId !== uData.id) {
+                        temp.push({ ...uData, UChannelId: singleObj.id })
+                      }
+                    }
+                  })
+
+                }
+              }
+            })
+            console.log(temp, "comboData")
+            setComboData(temp)
+            return temp
           }
-        
-        })
-    }, [userListData])
+        }
+
+      })
+  }, [userListData])
   console.log(comboData)
   console.log(userListData)
 
@@ -148,6 +148,7 @@ function App() {
         const items = response?.data?.messagesByChannelID?.items;
 
         if (items) {
+          console.log(items)
           setMessages(items);
         }
       })
@@ -169,6 +170,7 @@ function App() {
 
   //for testing
   useEffect(() => {
+    console.log(messages)
     setNewMsgs(messages);
   }, [messages])
 
@@ -183,6 +185,7 @@ function App() {
     const input = {
       channelID: chatId,
       author: userId,
+      status: "true",
       body: messageBody.trim()
     };
 
