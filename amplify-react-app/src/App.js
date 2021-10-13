@@ -5,8 +5,8 @@ import API, { graphqlOperation } from '@aws-amplify/api';
 import '@aws-amplify/pubsub';
 import ApolloClient from 'apollo-boost';
 import { ApolloProvider } from 'react-apollo';
-import { createMessage, createChat } from './graphql/mutations';
-import { onCreateMessage } from './graphql/subscriptions';
+import { createMessage, createChat, updateChat } from './graphql/mutations';
+import { onCreateMessage, onUpdateChat } from './graphql/subscriptions';
 import { messagesByChannelID, listUsers } from './graphql/queries';
 import { InputGroup, Button, FormControl, CloseButton } from 'react-bootstrap'
 import Avatar from '@mui/material/Avatar';
@@ -126,7 +126,7 @@ function App() {
                     ComboObj.map((singleObj) => {
                       if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
                         if (userId !== uData.id) {
-                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: true })
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status })
                         }
                       }
                     })
@@ -185,6 +185,20 @@ function App() {
     }
   }, [messages]);
   console.log(messages)
+
+  useEffect(() => {
+    const subscription = API
+      .graphql(graphqlOperation(onUpdateChat))
+      .subscribe({
+        next: (event) => {
+          console.log(event)
+        }
+      });
+    console.log("Checking status")
+    return () => {
+      subscription.unsubscribe();
+    }
+  }, []);
   //for testing
   // useEffect(() => {
   //   console.log(messages)
@@ -203,18 +217,32 @@ function App() {
     const input = {
       channelID: chatId,
       author: userId,
-      status: "true",
       body: messageBody.trim()
     };
 
     try {
       setMessageBody('');
       await API.graphql(graphqlOperation(createMessage, { input }))
+      statusFun(chatId);
     } catch (error) {
       console.warn(error);
     }
   };
-
+ 
+  const statusFun = async (chatId) => {
+    console.log("status block",chatId )
+    const input = {
+      id: chatId,
+      status: "true"
+    };
+    try {
+      console.log("in try")
+      await API.graphql(graphqlOperation(updateChat, { input }))
+    } catch (error) {
+      console.log("in catch")
+      console.warn(error);
+    }
+  }
 
   //mine
   const [newMsg, setNewMsg] = useState()
@@ -331,7 +359,7 @@ function App() {
                     <div key={i}>
                       <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); }}>
 
-                        <Badge variant={person.notificationStatus ? "dot" : null}  color= "info" className="userChatAvaster">
+                        <Badge variant={person.notificationStatus == "true"  ? "dot" : null}  color= "info" className="userChatAvaster">
                           <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
                         </Badge>
 
