@@ -24,6 +24,7 @@ type Chat @model{
   user1: ID!
   user2: ID!
   status: String
+  sender: String
   createdAt: AWSDateTime
   updatedAt: AWSDateTime
 }

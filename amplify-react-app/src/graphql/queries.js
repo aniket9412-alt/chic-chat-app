@@ -70,6 +70,7 @@ export const getChat = /* GraphQL */ `
       user1
       user2
       status
+      sender
       createdAt
       updatedAt
     }
@@ -87,6 +88,7 @@ export const listChats = /* GraphQL */ `
         user1
         user2
         status
+        sender
         createdAt
         updatedAt
       }

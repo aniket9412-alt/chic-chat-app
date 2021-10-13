@@ -101,6 +101,7 @@ export const createChat = /* GraphQL */ `
       user1
       user2
       status
+      sender
       createdAt
       updatedAt
     }
@@ -116,6 +117,7 @@ export const updateChat = /* GraphQL */ `
       user1
       user2
       status
+      sender
       createdAt
       updatedAt
     }
@@ -131,6 +133,7 @@ export const deleteChat = /* GraphQL */ `
       user1
       user2
       status
+      sender
       createdAt
       updatedAt
     }
