@@ -8,7 +8,6 @@ export const onCreateMessage = /* GraphQL */ `
       channelID
       author
       body
-      status
       createdAt
       updatedAt
     }
@@ -21,7 +20,6 @@ export const onUpdateMessage = /* GraphQL */ `
       channelID
       author
       body
-      status
       createdAt
       updatedAt
     }
@@ -34,7 +32,6 @@ export const onDeleteMessage = /* GraphQL */ `
       channelID
       author
       body
-      status
       createdAt
       updatedAt
     }
@@ -82,6 +79,7 @@ export const onCreateChat = /* GraphQL */ `
       id
       user1
       user2
+      status
       createdAt
       updatedAt
     }
@@ -93,6 +91,7 @@ export const onUpdateChat = /* GraphQL */ `
       id
       user1
       user2
+      status
       createdAt
       updatedAt
     }
@@ -104,6 +103,7 @@ export const onDeleteChat = /* GraphQL */ `
       id
       user1
       user2
+      status
       createdAt
       updatedAt
     }

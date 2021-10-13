@@ -5,7 +5,6 @@ type Message
   channelID: ID!
   author: String!
   body: String!
-  status: String
   createdAt: AWSDateTime
   updatedAt: AWSDateTime
 }
@@ -16,10 +15,15 @@ type User @model
   userName: String!
   password: String!
   name: String!
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }
 
 type Chat @model{
   id: ID!
   user1: ID!
   user2: ID!
+  status: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
 }
