@@ -20,6 +20,8 @@ import awsExports from './aws-exports';
 import { userLoginByUsernamePassword, listChats } from "./graphql/queries"
 import { Typography } from '@mui/material';
 import Badge from '@mui/material/Badge';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+
 
 import './App.css';
 import Login from './Login';
@@ -40,6 +42,7 @@ function App() {
   const [chatId, setChatId] = useState('');
   const [newMsgs, setNewMsgs] = useState([])
   const [comboData, setComboData] = useState([])
+  const [ChatBoxList, setChatBoxList] = useState(false)
 
   const handleLogin = () => {
     setLogin(true)
@@ -77,6 +80,7 @@ function App() {
 
   useEffect(() => {
     if (login) {
+      console.log("check")
       API
         .graphql(graphqlOperation(listUsers))
         .then((response) => {
@@ -85,73 +89,85 @@ function App() {
           setUserListData(userList)
 
         })
-      console.log(userListData.length)
+      // console.log(userListData.length)
     }
 
 
   }, [login])
 
   useEffect(() => {
-    API
-      .graphql(graphqlOperation(listChats, {
-        filter: {
-          or: [
-            {
-              user1: { eq: userId }
-            },
-            {
-              user2: { eq: userId }
-            }
-          ]
-        }
-      }))
-      .then((response) => {
-        console.log(response)
-        console.log(response?.data?.listChats?.items)
-        const ComboObj = response?.data?.listChats?.items;
-        const temp = [];
-        if (userListData.length > 0) {
-          {
-            userListData.map((uData) => {
-              if (ComboObj.length > 0) {
-                {
-                  ComboObj.map((singleObj) => {
-                    if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
-                      if (userId !== uData.id) {
-                        temp.push({ ...uData, UChannelId: singleObj.id })
-                      }
-                    }
-                  })
-
-                }
+    if (userListData.length > 0) {
+      console.log(userListData)
+      console.log("started")
+      API
+        .graphql(graphqlOperation(listChats, {
+          filter: {
+            or: [
+              {
+                user1: { eq: userId }
+              },
+              {
+                user2: { eq: userId }
               }
-            })
-            console.log(temp, "comboData")
-            setComboData(temp)
-            return temp
+            ]
           }
-        }
+        }))
+        .then((response) => {
+          console.log("ge")
+          console.log(response)
+          console.log(response?.data?.listChats?.items)
+          const ComboObj = response?.data?.listChats?.items;
+          const temp = [];
+          if (userListData.length > 0) {
+            {
+              userListData.map((uData) => {
+                if (ComboObj.length > 0) {
+                  {
+                    ComboObj.map((singleObj) => {
+                      if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
+                        if (userId !== uData.id) {
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: true })
+                        }
+                      }
+                    })
 
-      })
+                  }
+                }
+              })
+              console.log(temp, "comboData")
+              // const sortedData = temp.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+              // console.log(sortedData)
+              setComboData(temp)
+              return temp
+            }
+          }
+
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }
   }, [userListData])
-  console.log(comboData)
-  console.log(userListData)
+  // console.log(comboData)
+  // console.log(userListData)
 
 
   useEffect(() => {
-    API
-      .graphql(graphqlOperation(messagesByChannelID, {
-        channelID: chatId,
-        sortDirection: 'ASC'
-      }))
-      .then((response) => {
-        const items = response?.data?.messagesByChannelID?.items;
+    if (chatId) {
+      API
+        .graphql(graphqlOperation(messagesByChannelID, {
+          channelID: chatId,
+          sortDirection: 'ASC'
+        }))
+        .then((response) => {
+          const items = response?.data?.messagesByChannelID?.items;
 
-        if (items) {
-          console.log(items)
-          setMessages(items);
-        }
-      })
+          if (items) {
+            // console.log(items)
+            setMessages(items);
+          }
+        })
+    }
   }, [chatId]);
 
   useEffect(() => {
@@ -160,6 +176,7 @@ function App() {
       .subscribe({
         next: (event) => {
           setMessages([...messages, event.value.data.onCreateMessage]);
+          setNewMsgs([...newMsgs, event.value.data.onCreateMessage])
         }
       });
     console.log("Checking Subscription")
@@ -167,12 +184,13 @@ function App() {
       subscription.unsubscribe();
     }
   }, [messages]);
-
+  console.log(messages)
   //for testing
-  useEffect(() => {
-    console.log(messages)
-    setNewMsgs(messages);
-  }, [messages])
+  // useEffect(() => {
+  //   console.log(messages)
+  //   setNewMsgs(messages);
+  // }, [messages])
+  // console.log(newMsgs)
 
   const handleChange = (event) => {
     setMessageBody(event.target.value);
@@ -206,9 +224,8 @@ function App() {
 
   const [currentRec, setCurrentRec] = useState(undefined);
 
-  const showBoxs = (i, pid, name) => {
-    setCurrentRec(i);
-    console.log(`Selected record index: ${i}`);
+  const showBoxs = (i, pid, name, person) => {
+    setCurrentRec(person);
     setShowBox({ showBox: true }
     );
 
@@ -229,7 +246,7 @@ function App() {
         const filterItem = response?.data?.listChats?.items;
         const UserChatId = filterItem[0];
         if (UserChatId !== undefined) {
-          setChatId(JSON.stringify(UserChatId.id));
+          setChatId(UserChatId.id);
         }
         else {
 
@@ -241,7 +258,7 @@ function App() {
           try {
             API.graphql(graphqlOperation(createChat, { input }))
               .then((response) => {
-                setChatId(JSON.stringify(response.data.createChat.id));
+                setChatId(response.data.createChat.id);
               })
           } catch (error) {
             console.warn(error);
@@ -263,7 +280,6 @@ function App() {
   const messagesEndRef = useRef(null)
 
   const scrollToBottom = () => {
-    console.log("ref")
     messagesEndRef?.current?.scrollIntoView({ behavior: "smooth" })
   }
 
@@ -282,8 +298,7 @@ function App() {
     display: shownToggle ? "block" : "none"
   }
 
-  console.log(userListData)
-
+  // console.log(userListData)
 
   return (
     <>
@@ -291,7 +306,18 @@ function App() {
       {login ?
         <div>
           <center><h3>Welcome {userName}</h3></center>
+
+          {/* Chat Icon  */}
+          {/* <div className="Chatlogo">
+          <div className="pink-circle" onClick={() => setChatBoxList(!ChatBoxList)}>
+            <div className="white-circle">
+              <MoreHorizIcon />
+            </div>
+          </div>
+          </div> */}
+
           <ul style={{ float: "right" }}>
+            {/* {ChatBoxList ?  */}
             <div className="chatList">
 
               <>
@@ -301,32 +327,40 @@ function App() {
                 </div>
 
                 <div className="AllChatUsers ">
-                  {userListData.map((person, i) => (userId === person.id ? null :
+                  {comboData.map((person, i) => (userId === person.id ? null :
                     <div key={i}>
-                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name); scrollToBottom(); }}>
-                        {/* {newMsgs.length != 0 ? 
-                          <Badge badgeContent={(newMsgs.map((msg, i) => (msg.author == person.id ?  1 : null)))} color="warning" className="userChatAvaster">
-                            <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
-                          </Badge> 
-                      : 
-                       <Badge badgeContent={1} color="primary" className="userChatAvaster">
-                        <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
-                      </Badge> 
-                    } */}
-                        <Badge badgeContent={1} color="primary" className="userChatAvaster">
+                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); }}>
+
+                        <Badge variant={person.notificationStatus ? "dot" : null}  color= "info" className="userChatAvaster">
                           <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
                         </Badge>
+
+                        {/* {
+                          newMsgs.length != 0 ?
+                            <Badge badgeContent={(newMsgs.map((msg, i) => (msg.author == person.id && msg.channelID == person.UChannelId ? 1 : 0)))} color="warning" className="userChatAvaster">
+                              <Avatar alt={person.name} sx={{ width: 50, height: 50 }} src={Dhoni} />
+                            </Badge>
+                            :
+                            <Badge badgeContent={0} color="primary" className="userChatAvaster">
+                              <Avatar alt={person.name} sx={{ width: 50, height: 50 }} src={Dhoni} />
+                            </Badge>
+                        } */}
+
+
                         <div className="personModel">
                           <h4>{person.name}</h4>
                           <p className="userPara">Des</p>
-                          {/* <hr /> */}
                         </div>
                       </div>
                       <hr className="hrForChat" />
-                    </div>))}
+                    </div>))
+                  }
                 </div>
               </>
             </div>
+            {/* : null
+             }  */}
+
 
             {/* Start Chat with  */}
             {/* <div className="chatList">
@@ -364,9 +398,6 @@ function App() {
                         {currentRec !== undefined &&
                           <div className="modal-body">
                             <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
-                            {/* {this.state.data[this.state.currentRec].name} */}
-
-                            {/* ({this.state.data[this.state.currentRec].id}) */}
                           </div>
                         }
                       </b>
@@ -374,7 +405,7 @@ function App() {
                     <div className="two">
                       {currentRec !== undefined &&
                         <div>
-                          {userListData[currentRec].name}
+                          {currentRec.name}
                         </div>
                       }
                     </div>
@@ -390,7 +421,7 @@ function App() {
                         <div
                           key={message.id}
                         >
-                          {console.log(message.body === null ? "No" : "Yes")}
+                          {/* {console.log(message.body === null ? "No" : "Yes")} */}
                           {/* {message.body} */}
                           <Typography component={'span'} variant={'body2'}>
                             <span style={{ display: 'flex', marginTop: '20px' }}>

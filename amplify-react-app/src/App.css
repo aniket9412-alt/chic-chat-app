@@ -283,3 +283,88 @@ align-items: center;
 cursor: pointer;
 }
 
+/* .chatIconBtn {
+  background-color: #ff3396;
+  padding: 15px;
+  border-radius: 50%;
+  border: none;
+}
+.whiteChat {
+  color: #ff3396;
+  font-size: x-large;
+  border-bottom-right-radius: 50%;
+  border-top-left-radius: 50%;
+  border-top-right-radius: 50%;
+  border-bottom-left-radius: 10%;
+  padding: 6px;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+} */
+.Chatlogo {
+  position: fixed;
+  bottom: 40px;
+  right: 15px;
+  z-index: 100;
+  cursor: pointer;
+}
+.pink-circle {
+
+  position: relative;
+  width: 53px;
+  height: 53px;
+  border-radius: 40px;
+  background-color: #ff3396;
+  box-shadow: 2px 2px 3px 2px rgb(0,0,0,0.3);
+}
+.white-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 35px;
+  background-color: white;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #ff3396 !important;
+}
+/* .pink-circle:before {
+  position: absolute;
+  content: "";
+  top: 33px;
+  left: 0px;
+  border-width: 10px;
+  border-style: solid;
+  border-color: transparent #ffffff transparent transparent;
+  transform: rotate(-20deg) rotateX(-50deg);
+} */
+.pink-circle:before {
+  position: absolute;
+  content: "";
+  top: 29px;
+  left: 13px;
+  border-bottom: 12px solid white;
+  border-right: 12px solid transparent;
+}
+/* .pink-circle:after {
+  position: absolute;
+  content: "";
+  top: 33px;
+  left: -4px;
+  border-width: 15px;
+  border-style: solid;
+  border-color: transparent #3AC371 transparent transparent;
+  transform: rotate(-51deg) rotateX(-50deg);
+} */
+/* .pink-circle i {
+  position: absolute;
+ left: 109px;
+ top: 107px;
+ font-size: 41px;
+ color: aqua;
+} */
