@@ -126,7 +126,7 @@ function App() {
                     ComboObj.map((singleObj) => {
                       if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
                         if (userId !== uData.id) {
-                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status })
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender })
                         }
                       }
                     })
@@ -191,14 +191,31 @@ function App() {
       .graphql(graphqlOperation(onUpdateChat))
       .subscribe({
         next: (event) => {
-          console.log(event)
+          console.log(event.value.data.onUpdateChat)
+          const subsStatus = event.value.data.onUpdateChat;
+          statusChange(event.value.data)
         }
       });
     console.log("Checking status")
     return () => {
       subscription.unsubscribe();
     }
-  }, []);
+  }, [comboData]);
+
+  const statusChange = (newStatus) => {
+    const hollyStatus = [];
+    console.log(newStatus.onUpdateChat.sender)
+   const lacoData = comboData.map((users) => 
+       (users.id == newStatus.onUpdateChat.sender) ? 
+       { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender } 
+       : users
+   );
+   console.log('lacoData', lacoData)
+    if (lacoData.length > 0) {
+      console.log('lacoData', lacoData)
+      setComboData(lacoData)
+    }
+  }
   //for testing
   // useEffect(() => {
   //   console.log(messages)
@@ -223,17 +240,34 @@ function App() {
     try {
       setMessageBody('');
       await API.graphql(graphqlOperation(createMessage, { input }))
-      statusFun(chatId);
+      statusTrue(chatId, userId);
     } catch (error) {
       console.warn(error);
     }
   };
- 
-  const statusFun = async (chatId) => {
-    console.log("status block",chatId )
+
+  const statusTrue = async (chatId, userId) => {
+    console.log("status block", chatId)
     const input = {
       id: chatId,
-      status: "true"
+      status: "true",
+      sender: userId
+    };
+    try {
+      console.log("in try")
+      await API.graphql(graphqlOperation(updateChat, { input }))
+    } catch (error) {
+      console.log("in catch")
+      console.warn(error);
+    }
+  }
+
+  const statusFalse = async (chatIds, userId) => {
+    console.log("chat box open", chatIds)
+    const input = {
+      id: chatIds,
+      status: "false",
+      sender: userId
     };
     try {
       console.log("in try")
@@ -327,6 +361,7 @@ function App() {
   }
 
   // console.log(userListData)
+  console.log(comboData)
 
   return (
     <>
@@ -357,9 +392,9 @@ function App() {
                 <div className="AllChatUsers ">
                   {comboData.map((person, i) => (userId === person.id ? null :
                     <div key={i}>
-                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); }}>
+                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); statusFalse(person.UChannelId, person.id) }}>
 
-                        <Badge variant={person.notificationStatus == "true"  ? "dot" : null}  color= "info" className="userChatAvaster">
+                        <Badge variant={(person.notificationStatus == "true" && person.UChannelId == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster">
                           <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
                         </Badge>
 
