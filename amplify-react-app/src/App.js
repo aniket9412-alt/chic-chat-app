@@ -206,7 +206,7 @@ function App() {
     const hollyStatus = [];
     console.log(newStatus.onUpdateChat.sender)
    const lacoData = comboData.map((users) => 
-       (users.id == newStatus.onUpdateChat.sender) ? 
+       (users.UChannelId == newStatus.onUpdateChat.id && userId !== newStatus.onUpdateChat.sender) ? 
        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender } 
        : users
    );
@@ -394,7 +394,7 @@ function App() {
                     <div key={i}>
                       <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); statusFalse(person.UChannelId, person.id) }}>
 
-                        <Badge variant={(person.notificationStatus == "true" && person.UChannelId == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster">
+                        <Badge variant={(person.notificationStatus == "true" && person.id == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster">
                           <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
                         </Badge>
 
