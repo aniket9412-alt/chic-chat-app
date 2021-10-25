@@ -21,7 +21,8 @@ import { userLoginByUsernamePassword, listChats } from "./graphql/queries"
 import { Typography } from '@mui/material';
 import Badge from '@mui/material/Badge';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-
+import "emoji-mart/css/emoji-mart.css";
+import { Picker } from "emoji-mart";
 
 import './App.css';
 import Login from './Login';
@@ -50,7 +51,7 @@ function App() {
   const [shownToggle, setShownToggle] = useState(true);
 
   const [currentRec, setCurrentRec] = useState(undefined);
-
+  const [emojiPickerState, SetEmojiPicker] = useState(false);
   //For sample login
   const handleLogin = () => {
     setLogin(true)
@@ -116,8 +117,10 @@ function App() {
         }))
         .then((response) => {
           console.log(response)
+          console.log(userListData)
           // console.log(response?.data?.listChats?.items)
           const ComboObj = response?.data?.listChats?.items;
+          console.log(ComboObj)
           const temp = [];
           if (userListData.length > 0) {
             {
@@ -127,7 +130,7 @@ function App() {
                     ComboObj.map((singleObj) => {
                       if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
                         if (userId !== uData.id) {
-                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender })
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender, chatUpdatedAt: singleObj.updatedAt})
                         }
                       }
                     })
@@ -135,9 +138,11 @@ function App() {
                   }
                 }
               })
-              const sortedData = temp.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+              const sortedData  = temp.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
+             
               console.log(sortedData, "sorted Data")
-              setComboData(temp)
+              console.log(temp)
+              setComboData(sortedData)
               return temp
             }
           }
@@ -205,13 +210,15 @@ function App() {
     console.log(newStatus.onUpdateChat.sender)
     const lacoData = comboData.map((users) =>
       (users.UChannelId == newStatus.onUpdateChat.id && userId !== newStatus.onUpdateChat.sender) ?
-        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender }
+        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender, chatUpdatedAt: newStatus.onUpdateChat.updatedAt }
         : users
     );
     // console.log('lacoData', lacoData)
     if (lacoData.length > 0) {
+      const sortedDatalist  = lacoData.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
       console.log('lacoData', lacoData)
-      setComboData(lacoData)
+      console.log('sortedDatalist', sortedDatalist)
+      setComboData(sortedDatalist)
     }
   }
   //for testing
@@ -249,7 +256,7 @@ function App() {
     const input = {
       id: chatId,
       status: "true",
-      sender: userId
+      sender: userId,
     };
     try {
       await API.graphql(graphqlOperation(updateChat, { input }))
@@ -364,7 +371,22 @@ function App() {
     display: shownToggle ? "block" : "none"
   }
 
-
+  let emojiPicker;
+  if (emojiPickerState) {
+    emojiPicker = (
+      <Picker
+        title="Pick your emoji…"
+        emoji="point_up"
+        style={{ position: 'absolute', width: "300px", bottom: "45px" }}
+        onSelect={emoji => setMessageBody(messageBody + emoji.native)}
+      />
+    );
+  }
+  function triggerPicker(event) {
+    event.preventDefault();
+    SetEmojiPicker(!emojiPickerState);
+  }
+  
   return (
     <>
       {/*  <ApolloProvider client={client}> */}
@@ -373,16 +395,16 @@ function App() {
           <center><h3>Welcome {userName}</h3></center>
 
           {/* Chat Icon  */}
-          {/* <div className="Chatlogo">
+          <div className="Chatlogo">
           <div className="pink-circle" onClick={() => setChatBoxList(!ChatBoxList)}>
             <div className="white-circle">
-              <MoreHorizIcon />
+              <MoreHorizIcon style={{ fontSize: 28 }} />
             </div>
           </div>
-          </div> */}
+          </div>
 
           <ul style={{ float: "right" }}>
-            {/* {ChatBoxList ?  */}
+            {ChatBoxList ? 
             <div className="chatList">
 
               <>
@@ -411,8 +433,8 @@ function App() {
                 </div>
               </>
             </div>
-            {/* : null
-             }  */}
+            : null
+             } 
 
 
             {/* Start Chat with  */}
@@ -469,7 +491,10 @@ function App() {
 
                   </div>
                   <div style={hidden} className="msg_wrap">
-                    <div className="msg_body" onClick = {(currentRec.notificationStatus == "true") ? () => statusFalse(currentRec?.UChannelId, currentRec?.id) : null}>
+                    <div className="msg_body" 
+                    onClick = {() => statusFalse(currentRec?.UChannelId, currentRec?.id)}
+                    // onClick = {(currentRec.notificationStatus == "true") ? () => statusFalse(currentRec?.UChannelId, currentRec?.id) : null}
+                    >
 
                       {messages.map((message) => (
                         <div
@@ -489,6 +514,8 @@ function App() {
 
                     </div>
                   </div>
+                  {emojiPicker}
+
                   <hr />
                   <div className="msgBtm">
                     <InputGroup className="inputGroup">
@@ -499,7 +526,7 @@ function App() {
                         value={messageBody}
                       // aria-label="Recipient's username with two button addons"
                       />
-                      <span className="emoji"><MoodIcon /></span>
+                      <span className="emoji" onClick={triggerPicker}>😀</span>
                       <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
                     </InputGroup>
                   </div>
