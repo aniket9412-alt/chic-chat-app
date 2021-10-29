@@ -180,7 +180,10 @@ function App() {
       .graphql(graphqlOperation(onCreateMessage))
       .subscribe({
         next: (event) => {
+          if(chatId == event.value.data.onCreateMessage.channelID){
           setMessages([...messages, event.value.data.onCreateMessage]);
+          }
+          // console.log(event.value.data.onCreateMessage.channelID)
         }
       });
     return () => {
@@ -524,6 +527,7 @@ function App() {
                         placeholder="Type here!"
                         onChange={handleChange}
                         value={messageBody}
+                        required
                       // aria-label="Recipient's username with two button addons"
                       />
                       <span className="emoji" onClick={triggerPicker}>😀</span>
