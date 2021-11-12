@@ -21,7 +21,8 @@ import { userLoginByUsernamePassword, listChats } from "./graphql/queries"
 import { Typography } from '@mui/material';
 import Badge from '@mui/material/Badge';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-
+import "emoji-mart/css/emoji-mart.css";
+import { Picker } from "emoji-mart";
 
 import './App.css';
 import Login from './Login';
@@ -42,12 +43,19 @@ function App() {
   const [chatId, setChatId] = useState('');
   const [newMsgs, setNewMsgs] = useState([])
   const [comboData, setComboData] = useState([])
-  const [ChatBoxList, setChatBoxList] = useState(false)
 
+  const [ChatBoxList, setChatBoxList] = useState(false)
+  const [newMsg, setNewMsg] = useState()
+  const [message, setMessage] = useState([]);
+  const [showBox, setShowBox] = useState(false);
+  const [shownToggle, setShownToggle] = useState(true);
+
+  const [currentRec, setCurrentRec] = useState(undefined);
+  const [emojiPickerState, SetEmojiPicker] = useState(false);
+  //For sample login
   const handleLogin = () => {
     setLogin(true)
   }
-
   useEffect(() => {
     if (userId.length > 0) {
       setLogin(true)
@@ -55,10 +63,10 @@ function App() {
   }, [userId])
 
   const handleSubmitLogin = (email, password) => {
-
     const pass = {
       eq: password
     }
+
     API
       .graphql(graphqlOperation(userLoginByUsernamePassword, {
         userName: email,
@@ -68,19 +76,17 @@ function App() {
         const items = response?.data?.userLoginByUsernamePassword?.items[0];
         setUserId(items.id);
         setUserName(items.name);
-        console.log("Login")
 
       })
       .catch((error) => {
         console.log("UserName/Password is Wrong!")
       })
     handleLogin();
-
   }
 
+//Fetching list of users
   useEffect(() => {
     if (login) {
-      console.log("check")
       API
         .graphql(graphqlOperation(listUsers))
         .then((response) => {
@@ -91,14 +97,11 @@ function App() {
         })
       // console.log(userListData.length)
     }
-
-
   }, [login])
 
+  // Fetching listChats and combining the listChats and listUsers
   useEffect(() => {
     if (userListData.length > 0) {
-      console.log(userListData)
-      console.log("started")
       API
         .graphql(graphqlOperation(listChats, {
           filter: {
@@ -113,10 +116,11 @@ function App() {
           }
         }))
         .then((response) => {
-          console.log("ge")
           console.log(response)
-          console.log(response?.data?.listChats?.items)
+          console.log(userListData)
+          // console.log(response?.data?.listChats?.items)
           const ComboObj = response?.data?.listChats?.items;
+          console.log(ComboObj)
           const temp = [];
           if (userListData.length > 0) {
             {
@@ -126,7 +130,7 @@ function App() {
                     ComboObj.map((singleObj) => {
                       if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
                         if (userId !== uData.id) {
-                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status })
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender, chatUpdatedAt: singleObj.updatedAt})
                         }
                       }
                     })
@@ -134,10 +138,11 @@ function App() {
                   }
                 }
               })
-              console.log(temp, "comboData")
-              // const sortedData = temp.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-              // console.log(sortedData)
-              setComboData(temp)
+              const sortedData  = temp.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
+             
+              console.log(sortedData, "sorted Data")
+              console.log(temp)
+              setComboData(sortedData)
               return temp
             }
           }
@@ -148,57 +153,77 @@ function App() {
         })
     }
   }, [userListData])
-  // console.log(comboData)
-  // console.log(userListData)
 
 
-  useEffect(() => {
-    if (chatId) {
-      API
-        .graphql(graphqlOperation(messagesByChannelID, {
-          channelID: chatId,
-          sortDirection: 'ASC'
-        }))
-        .then((response) => {
-          const items = response?.data?.messagesByChannelID?.items;
 
-          if (items) {
-            // console.log(items)
-            setMessages(items);
-          }
-        })
-    }
-  }, [chatId]);
+  // useEffect(() => {
+  //   if (chatId) {
+  //     API
+  //       .graphql(graphqlOperation(messagesByChannelID, {
+  //         channelID: chatId,
+  //         sortDirection: 'ASC'
+  //       }))
+  //       .then((response) => {
+  //         const items = response?.data?.messagesByChannelID?.items;
 
+  //         if (items) {
+  //           // console.log(items)
+  //           setMessages(items);
+  //         }
+  //       })
+  //   }
+  // }, [chatId]);
+
+  //Subscription for messages
   useEffect(() => {
     const subscription = API
       .graphql(graphqlOperation(onCreateMessage))
       .subscribe({
         next: (event) => {
+          if(chatId == event.value.data.onCreateMessage.channelID){
           setMessages([...messages, event.value.data.onCreateMessage]);
-          setNewMsgs([...newMsgs, event.value.data.onCreateMessage])
+          }
+          // console.log(event.value.data.onCreateMessage.channelID)
         }
       });
-    console.log("Checking Subscription")
     return () => {
       subscription.unsubscribe();
     }
   }, [messages]);
-  console.log(messages)
+  // console.log(messages)
 
+  //Subscription for Status
   useEffect(() => {
     const subscription = API
       .graphql(graphqlOperation(onUpdateChat))
       .subscribe({
         next: (event) => {
-          console.log(event)
+          console.log(event.value.data.onUpdateChat)
+          const subsStatus = event.value.data.onUpdateChat;
+          statusChange(event.value.data)
         }
       });
-    console.log("Checking status")
     return () => {
       subscription.unsubscribe();
     }
-  }, []);
+  }, [comboData]);
+//Loading updated status
+  const statusChange = (newStatus) => {
+    const hollyStatus = [];
+    console.log(newStatus.onUpdateChat.sender)
+    const lacoData = comboData.map((users) =>
+      (users.UChannelId == newStatus.onUpdateChat.id && userId !== newStatus.onUpdateChat.sender) ?
+        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender, chatUpdatedAt: newStatus.onUpdateChat.updatedAt }
+        : users
+    );
+    // console.log('lacoData', lacoData)
+    if (lacoData.length > 0) {
+      const sortedDatalist  = lacoData.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
+      console.log('lacoData', lacoData)
+      console.log('sortedDatalist', sortedDatalist)
+      setComboData(sortedDatalist)
+    }
+  }
   //for testing
   // useEffect(() => {
   //   console.log(messages)
@@ -223,35 +248,42 @@ function App() {
     try {
       setMessageBody('');
       await API.graphql(graphqlOperation(createMessage, { input }))
-      statusFun(chatId);
+      statusTrue(chatId, userId);
     } catch (error) {
       console.warn(error);
     }
   };
- 
-  const statusFun = async (chatId) => {
-    console.log("status block",chatId )
+
+  const statusTrue = async (chatId, userId) => {
+    // console.log("status block", chatId)
     const input = {
       id: chatId,
-      status: "true"
+      status: "true",
+      sender: userId,
     };
     try {
-      console.log("in try")
       await API.graphql(graphqlOperation(updateChat, { input }))
     } catch (error) {
-      console.log("in catch")
       console.warn(error);
     }
   }
 
-  //mine
-  const [newMsg, setNewMsg] = useState()
-  const [message, setMessage] = useState([]);
-  const [showBox, setShowBox] = useState(false);
-  const [shownToggle, setShownToggle] = useState(true);
+  const statusFalse = async (chatIds, userId) => {
+    const input = {
+      id: chatIds,
+      status: "false",
+      sender: userId
+    };
+    try {
+      await API.graphql(graphqlOperation(updateChat, { input }))
+    } catch (error) {
+      console.warn(error);
+    }
+  }
 
-  const [currentRec, setCurrentRec] = useState(undefined);
-
+  
+ 
+//Opening chat box
   const showBoxs = (i, pid, name, person) => {
     setCurrentRec(person);
     setShowBox({ showBox: true }
@@ -282,7 +314,6 @@ function App() {
             user1: userId,
             user2: pid,
           };
-          console.log(input)
           try {
             API.graphql(graphqlOperation(createChat, { input }))
               .then((response) => {
@@ -295,7 +326,24 @@ function App() {
 
       })
   }
+  //Fetching old messages
+  useEffect(() => {
+    if (chatId) {
+      API
+        .graphql(graphqlOperation(messagesByChannelID, {
+          channelID: chatId,
+          sortDirection: 'ASC'
+        }))
+        .then((response) => {
+          const items = response?.data?.messagesByChannelID?.items;
 
+          if (items) {
+            // console.log(items)
+            setMessages(items);
+          }
+        })
+    }
+  }, [chatId]);
 
 
   // const toggle = () => {
@@ -326,8 +374,22 @@ function App() {
     display: shownToggle ? "block" : "none"
   }
 
-  // console.log(userListData)
-
+  let emojiPicker;
+  if (emojiPickerState) {
+    emojiPicker = (
+      <Picker
+        title="Pick your emoji…"
+        emoji="point_up"
+        style={{ position: 'absolute', width: "300px", bottom: "45px" }}
+        onSelect={emoji => setMessageBody(messageBody + emoji.native)}
+      />
+    );
+  }
+  function triggerPicker(event) {
+    event.preventDefault();
+    SetEmojiPicker(!emojiPickerState);
+  }
+  
   return (
     <>
       {/*  <ApolloProvider client={client}> */}
@@ -336,16 +398,16 @@ function App() {
           <center><h3>Welcome {userName}</h3></center>
 
           {/* Chat Icon  */}
-          {/* <div className="Chatlogo">
+          <div className="Chatlogo">
           <div className="pink-circle" onClick={() => setChatBoxList(!ChatBoxList)}>
             <div className="white-circle">
-              <MoreHorizIcon />
+              <MoreHorizIcon style={{ fontSize: 28 }} />
             </div>
           </div>
-          </div> */}
+          </div>
 
           <ul style={{ float: "right" }}>
-            {/* {ChatBoxList ?  */}
+            {ChatBoxList ? 
             <div className="chatList">
 
               <>
@@ -357,23 +419,11 @@ function App() {
                 <div className="AllChatUsers ">
                   {comboData.map((person, i) => (userId === person.id ? null :
                     <div key={i}>
-                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); }}>
+                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); statusFalse(person.UChannelId, person.id) }}>
 
-                        <Badge variant={person.notificationStatus == "true"  ? "dot" : null}  color= "info" className="userChatAvaster">
+                        <Badge variant={(person.notificationStatus == "true" && person.id == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster">
                           <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
                         </Badge>
-
-                        {/* {
-                          newMsgs.length != 0 ?
-                            <Badge badgeContent={(newMsgs.map((msg, i) => (msg.author == person.id && msg.channelID == person.UChannelId ? 1 : 0)))} color="warning" className="userChatAvaster">
-                              <Avatar alt={person.name} sx={{ width: 50, height: 50 }} src={Dhoni} />
-                            </Badge>
-                            :
-                            <Badge badgeContent={0} color="primary" className="userChatAvaster">
-                              <Avatar alt={person.name} sx={{ width: 50, height: 50 }} src={Dhoni} />
-                            </Badge>
-                        } */}
-
 
                         <div className="personModel">
                           <h4>{person.name}</h4>
@@ -386,8 +436,8 @@ function App() {
                 </div>
               </>
             </div>
-            {/* : null
-             }  */}
+            : null
+             } 
 
 
             {/* Start Chat with  */}
@@ -423,9 +473,10 @@ function App() {
 
                     <div className="one">
                       <b>
+                        {/* {console.log(currentRec.notificationStatus)} */}
                         {currentRec !== undefined &&
                           <div className="modal-body">
-                            <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
+                              <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
                           </div>
                         }
                       </b>
@@ -443,13 +494,15 @@ function App() {
 
                   </div>
                   <div style={hidden} className="msg_wrap">
-                    <div className="msg_body">
+                    <div className="msg_body" 
+                    onClick = {() => statusFalse(currentRec?.UChannelId, currentRec?.id)}
+                    // onClick = {(currentRec.notificationStatus == "true") ? () => statusFalse(currentRec?.UChannelId, currentRec?.id) : null}
+                    >
 
                       {messages.map((message) => (
                         <div
                           key={message.id}
                         >
-                          {/* {console.log(message.body === null ? "No" : "Yes")} */}
                           {/* {message.body} */}
                           <Typography component={'span'} variant={'body2'}>
                             <span style={{ display: 'flex', marginTop: '20px' }}>
@@ -464,6 +517,8 @@ function App() {
 
                     </div>
                   </div>
+                  {emojiPicker}
+
                   <hr />
                   <div className="msgBtm">
                     <InputGroup className="inputGroup">
@@ -472,9 +527,10 @@ function App() {
                         placeholder="Type here!"
                         onChange={handleChange}
                         value={messageBody}
+                        required
                       // aria-label="Recipient's username with two button addons"
                       />
-                      <span className="emoji"><MoodIcon /></span>
+                      <span className="emoji" onClick={triggerPicker}>😀</span>
                       <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
                     </InputGroup>
                   </div>

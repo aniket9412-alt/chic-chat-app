@@ -133,7 +133,7 @@ cursor: pointer;
   background-color: white;
 }
 .chatHeader {
-  background: rgb(189, 194, 192);
+  background: #f774b3;
   color: black;
   height: 3rem;
   display: flex;
@@ -181,6 +181,7 @@ cursor: pointer;
 }
 .chatSection{
   margin-left: 2%;
+  color: white;
 }
 .chatSection, .closeIco {
 display: inline-block;  
