@@ -81,6 +81,7 @@ export const onCreateChat = /* GraphQL */ `
       user2
       status
       sender
+      messageCount
       createdAt
       updatedAt
     }
@@ -94,6 +95,7 @@ export const onUpdateChat = /* GraphQL */ `
       user2
       status
       sender
+      messageCount
       createdAt
       updatedAt
     }
@@ -107,6 +109,7 @@ export const onDeleteChat = /* GraphQL */ `
       user2
       status
       sender
+      messageCount
       createdAt
       updatedAt
     }
