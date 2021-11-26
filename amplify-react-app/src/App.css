@@ -38,8 +38,8 @@
 } */
 
 body{
-  background: #e5e5e5;  
-  font-family: sans-serif;
+  background: rgb(204, 186, 186);  
+  font-family: 'Poppins';
 }
 
 .msg_box{
@@ -52,9 +52,9 @@ body{
 }
 
 .msg_head{  
-  background: rgb(189, 194, 192);
+  background: #efefef;
   color: black;
-  height: 3rem;
+  height: 48px;
   display: flex;
   /* justify-content: space-between; */
   align-items: center;
@@ -86,6 +86,18 @@ flex: 1;
 text-align: left;
 margin-left: 1rem;
 color: black;
+/* font-family: 'Poppins'; */
+/* font-size: 14px; */
+/* font-weight: 500; */
+opacity: 0.8;
+
+font-family: "Poppins";
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
 }
 .four {
 margin-right: 15px;
@@ -99,7 +111,8 @@ cursor: pointer;
 }
 .msg_body{
   background: white;
-  height: 300px;
+  height: 308px;
+  font-family: "Poppins";
   font-size: 12px;
   padding: 15px;
   overflow: auto;
@@ -118,14 +131,20 @@ cursor: pointer;
 } */
 
 /****** Slider Layout Popup ******/
+.connectedUsersList {
+  position: fixed;
+  bottom: 0;
+  right: 10px;
+  /* z-index: 100; */
+}
 .chatList {
   /* border: 1px solid #b2b2b2; */
-  width: 280px;
-  margin-bottom: 10px;
+  width: 290px;
+  /* margin-bottom: 10px; */
 
 }
 .AllChatUsers {
-  height: 200px;
+  height: 391px;
   right: 0px;
   top: 0px;
   overflow: auto;
@@ -133,9 +152,9 @@ cursor: pointer;
   background-color: white;
 }
 .chatHeader {
-  background: #f774b3;
+  background: #ee357e;
   color: black;
-  height: 3rem;
+  height: 40px;
   display: flex;
   /* justify-content: space-between; */
   align-items: center;
@@ -154,9 +173,9 @@ cursor: pointer;
   background-color: white;
 }
 .hrForChat {
-    background-color: #eee;
+    background-color: #d8d8d8;
     border: 0 none;
-    color: #eee;
+    /* color: #eee; */
     height: 1px;
     margin-left: 3%;
     margin-right: 3%;
@@ -180,8 +199,15 @@ cursor: pointer;
   margin-left: 2%;
 }
 .chatSection{
-  margin-left: 2%;
-  color: white;
+  margin-left: 3.5%;
+  font-family: 'Poppins';
+  font-size: 16px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #fff;
 }
 .chatSection, .closeIco {
 display: inline-block;  
@@ -203,15 +229,14 @@ display: inline-block;
 } */
 
 .text {
-  width: 74%;
+  width: 95%;
 }
 .textRight {
-width: 79%;
+width: 95%;
 /* float: left; */
 /* border-radius: 10px; */
 /* text-align: left;
 padding-left: 6px; */
-
 }
 /* .inputField {
 text-align: left;
@@ -220,16 +245,21 @@ text-align: left;
   margin-right:0px;
 } */
 
-/* .msgBtm {
-    display: flex;
-} */
+/* .msgBtm { */
+    /* display: flex; */
+    
+     /* height: 42px; */
+/* } */
 .Smsg {
-  background-color: rgb(247, 204, 152);
-  color: white;
+  background-color: #f5edf1;
+  color: black;
   float: right;
+  font-family: 'Poppins';
   font-size: small;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  /* margin: 0 8px 0 0; */
+  /* padding-top: 8px;
+  padding-bottom: 8px; */
+  padding: 8px 11px 8px 14px;
   /* background-color: #DAF7A6 ; */
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
@@ -237,16 +267,22 @@ text-align: left;
   /* overflow: hidden; */
   overflow-wrap: break-word !important;
   text-align: right;
+  width: auto;
+  /* display: inline-block !important; */
+  vertical-align: top !important;
+  text-align: right !important;
   /* padding-left: 2px; */
-  padding-right: 4%;
-  padding-left: 6%;
+  /* padding-right: 4%;
+  padding-left: 6%; */
 }
 .Rmsg {
-  background-color: #ff3396;
+  background-color: #ee357e;
   float: left;
+  font-family: 'Poppins';
   font-size: small;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding: 8px 25px 8px 11px;
+  /* padding-top: 8px;
+  padding-bottom: 8px; */
   /* background-color: #ff3396; */
   color: white;
   border-bottom-left-radius: 10px;
@@ -260,8 +296,11 @@ text-align: left;
   /* float: left; */
   /* border-radius: 10px; */
   /* text-align: left; */
-  padding-left: 6px; 
-  padding-right: 6%;
+  /* padding-left: 6px; 
+  padding-right: 8%; */
+  /* display: inline-block !important; */
+  vertical-align: top !important;
+  text-align: left !important;
 }
 .inputGroup {
 display: flex;
@@ -273,17 +312,36 @@ margin-left: 1rem;
 width: 65%;
 height: auto;
 /* background-color: lightyellow; */
-padding-top: 3%;
+padding-top: 0.5%;
 padding-bottom: 3%;
-font-size: 1rem;
 border-radius: 6px;
+font-family: 'Poppins';
+  font-size: 11px;
+  font-weight: normal;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  color: #818181;
 }
+
+/* Need this commented code */
+/* .formControl:focus {
+    outline: none;
+} */
+
 .emoji, .send {
-margin-left: 0.5rem;
+margin-left: 1rem;
 display: flex;
 align-items: center;
 cursor: pointer;
+/* width: 15px; */
+  /* height: 18px; */
+  /* margin: 0 0 0 15px; */
+  object-fit: contain;
 }
+
+
 
 /* .chatIconBtn {
   background-color: #ff3396;
@@ -317,7 +375,7 @@ cursor: pointer;
   width: 53px;
   height: 53px;
   border-radius: 40px;
-  background-color: #ff3396;
+  background-color: #ee357e;
   box-shadow: 2px 2px 3px 2px rgb(0,0,0,0.3);
 }
 .white-circle {
@@ -333,7 +391,7 @@ cursor: pointer;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #ff3396 !important;
+  color: #ee357e !important;
 }
 /* .pink-circle:before {
   position: absolute;
@@ -370,3 +428,30 @@ cursor: pointer;
  font-size: 41px;
  color: aqua;
 } */
+
+
+/* chatSearch */
+#chatSearch {
+  background-color: #f7edf1;
+  margin-top: 3%;
+  margin-right: 3%;
+}
+.chatListClose {
+  margin-left: auto; 
+  margin-right: 2%;
+  color: white;
+  cursor: pointer;
+}
+.numberOfMessages {
+  float: right;
+  margin-right: 14%;
+  /* width: 26px;
+  height: 21px; */
+  /* background-color: aqua; */
+
+  
+  /* margin: 5px 3px 0 82px;
+  padding: 2px 9px 2px 10px; */
+  border-radius: 10.5px;
+  /* background-color: #ee357e; */
+}

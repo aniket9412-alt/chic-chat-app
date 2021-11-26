@@ -7,10 +7,12 @@ import ApolloClient from 'apollo-boost';
 import { ApolloProvider } from 'react-apollo';
 import { createMessage, createChat, updateChat } from './graphql/mutations';
 import { onCreateMessage, onUpdateChat } from './graphql/subscriptions';
-import { messagesByChannelID, listUsers } from './graphql/queries';
+import { messagesByChannelID, listUsers, getChat } from './graphql/queries';
 import { InputGroup, Button, FormControl, CloseButton } from 'react-bootstrap'
 import Avatar from '@mui/material/Avatar';
 import Dhoni from './assets/dhoni.jpg'
+import  send  from './assets/send.png'
+import  smiley  from './assets/smiley.jpg'
 import Ms from './assets/ms.webp'
 import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
@@ -23,7 +25,9 @@ import Badge from '@mui/material/Badge';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import "emoji-mart/css/emoji-mart.css";
 import { Picker } from "emoji-mart";
-
+import InputBase from '@material-ui/core/InputBase';
+import SearchIcon from '@material-ui/icons/Search';
+import { alpha, makeStyles } from '@material-ui/core/styles';
 import './App.css';
 import Login from './Login';
 
@@ -32,6 +36,50 @@ Amplify.configure(awsExports);
 // const client = new ApolloClient({
 //   uri: "https://48p1r2roz4.sse.codesandbox.io"
 // });
+
+const useStyles = makeStyles((theme) => ({
+
+  search: {
+    position: 'relative',
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: alpha(theme.palette.common.white, 0.15),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.common.white, 0.25),
+    },
+    marginLeft: 0,
+    width: '100%',
+    [theme.breakpoints.up('sm')]: {
+      marginLeft: theme.spacing(1),
+      width: 'auto',
+    },
+  },
+  searchIcon: {
+    padding: theme.spacing(0, 2),
+    height: '100%',
+    position: 'absolute',
+    pointerEvents: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'gray'
+  },
+  inputRoot: {
+    color: 'inherit',
+  },
+  inputInput: {
+    padding: theme.spacing(1, 1, 1, 0),
+    // vertical padding + font size from searchIcon
+    paddingLeft: `calc(1em + ${theme.spacing(4)}px)`,
+    transition: theme.transitions.create('width'),
+    width: '100%',
+    [theme.breakpoints.up('sm')]: {
+      width: '12ch',
+      '&:focus': {
+        width: '20ch',
+      },
+    },
+  },
+}));
 
 function App() {
   const [messages, setMessages] = useState([]);
@@ -52,6 +100,9 @@ function App() {
 
   const [currentRec, setCurrentRec] = useState(undefined);
   const [emojiPickerState, SetEmojiPicker] = useState(false);
+
+  const classes = useStyles();
+
   //For sample login
   const handleLogin = () => {
     setLogin(true)
@@ -73,6 +124,7 @@ function App() {
         password: pass
       }))
       .then((response) => {
+        console.log(response)
         const items = response?.data?.userLoginByUsernamePassword?.items[0];
         setUserId(items.id);
         setUserName(items.name);
@@ -84,7 +136,7 @@ function App() {
     handleLogin();
   }
 
-//Fetching list of users
+  //Fetching list of users
   useEffect(() => {
     if (login) {
       API
@@ -101,7 +153,9 @@ function App() {
 
   // Fetching listChats and combining the listChats and listUsers
   useEffect(() => {
-    if (userListData.length > 0) {
+    console.log(userListData.length)
+    console.log(userId)
+    if (userListData.length > 0 && userId) {
       API
         .graphql(graphqlOperation(listChats, {
           filter: {
@@ -130,7 +184,7 @@ function App() {
                     ComboObj.map((singleObj) => {
                       if (uData.id == singleObj.user1 || uData.id == singleObj.user2) {
                         if (userId !== uData.id) {
-                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender, chatUpdatedAt: singleObj.updatedAt})
+                          temp.push({ ...uData, UChannelId: singleObj.id, notificationStatus: singleObj.status, sender: singleObj.sender, chatUpdatedAt: singleObj.updatedAt, chatMsgCount: singleObj.messageCount })
                         }
                       }
                     })
@@ -138,8 +192,8 @@ function App() {
                   }
                 }
               })
-              const sortedData  = temp.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
-             
+              const sortedData = temp.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
+
               console.log(sortedData, "sorted Data")
               console.log(temp)
               setComboData(sortedData)
@@ -152,7 +206,7 @@ function App() {
           console.log(error)
         })
     }
-  }, [userListData])
+  }, [userListData,userId])
 
 
 
@@ -180,8 +234,9 @@ function App() {
       .graphql(graphqlOperation(onCreateMessage))
       .subscribe({
         next: (event) => {
-          if(chatId == event.value.data.onCreateMessage.channelID){
-          setMessages([...messages, event.value.data.onCreateMessage]);
+          if (chatId == event.value.data.onCreateMessage.channelID) {
+            console.log(event.value.data.onCreateMessage)
+            setMessages([...messages, event.value.data.onCreateMessage]);
           }
           // console.log(event.value.data.onCreateMessage.channelID)
         }
@@ -190,7 +245,7 @@ function App() {
       subscription.unsubscribe();
     }
   }, [messages]);
-  // console.log(messages)
+  console.log(messages)
 
   //Subscription for Status
   useEffect(() => {
@@ -207,18 +262,18 @@ function App() {
       subscription.unsubscribe();
     }
   }, [comboData]);
-//Loading updated status
+  //Loading updated status
   const statusChange = (newStatus) => {
     const hollyStatus = [];
     console.log(newStatus.onUpdateChat.sender)
     const lacoData = comboData.map((users) =>
       (users.UChannelId == newStatus.onUpdateChat.id && userId !== newStatus.onUpdateChat.sender) ?
-        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender, chatUpdatedAt: newStatus.onUpdateChat.updatedAt }
+        { ...users, notificationStatus: newStatus.onUpdateChat.status, sender: newStatus.onUpdateChat.sender, chatUpdatedAt: newStatus.onUpdateChat.updatedAt, chatMsgCount: newStatus.onUpdateChat.messageCount }
         : users
     );
     // console.log('lacoData', lacoData)
     if (lacoData.length > 0) {
-      const sortedDatalist  = lacoData.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
+      const sortedDatalist = lacoData.sort((a, b) => new Date(b.chatUpdatedAt) - new Date(a.chatUpdatedAt))
       console.log('lacoData', lacoData)
       console.log('sortedDatalist', sortedDatalist)
       setComboData(sortedDatalist)
@@ -248,18 +303,39 @@ function App() {
     try {
       setMessageBody('');
       await API.graphql(graphqlOperation(createMessage, { input }))
-      statusTrue(chatId, userId);
+      getMessageCount(chatId, userId);
+
     } catch (error) {
       console.warn(error);
     }
   };
 
-  const statusTrue = async (chatId, userId) => {
+  const getMessageCount = async (chatId, userId) => {
+    // console.log("status block", chatId)
+
+    try {
+      await API.graphql(graphqlOperation(getChat, { id: chatId }))
+        .then((response) => {
+          console.log(response, "Message Response")
+          var messgCount = response.data.getChat.messageCount;
+
+          if (messgCount === null) {
+            var messgCount = 0;
+          }
+          statusTrue(chatId, userId, messgCount + 1);
+        })
+    } catch (error) {
+      console.warn(error);
+    }
+  }
+
+  const statusTrue = async (chatId, userId, messgCount) => {
     // console.log("status block", chatId)
     const input = {
       id: chatId,
       status: "true",
       sender: userId,
+      messageCount: messgCount
     };
     try {
       await API.graphql(graphqlOperation(updateChat, { input }))
@@ -272,7 +348,8 @@ function App() {
     const input = {
       id: chatIds,
       status: "false",
-      sender: userId
+      sender: userId,
+      messageCount: 0
     };
     try {
       await API.graphql(graphqlOperation(updateChat, { input }))
@@ -281,9 +358,9 @@ function App() {
     }
   }
 
-  
- 
-//Opening chat box
+
+
+  //Opening chat box
   const showBoxs = (i, pid, name, person) => {
     setCurrentRec(person);
     setShowBox({ showBox: true }
@@ -389,7 +466,7 @@ function App() {
     event.preventDefault();
     SetEmojiPicker(!emojiPickerState);
   }
-  
+
   return (
     <>
       {/*  <ApolloProvider client={client}> */}
@@ -398,47 +475,80 @@ function App() {
           <center><h3>Welcome {userName}</h3></center>
 
           {/* Chat Icon  */}
-          <div className="Chatlogo">
-          <div className="pink-circle" onClick={() => setChatBoxList(!ChatBoxList)}>
-            <div className="white-circle">
-              <MoreHorizIcon style={{ fontSize: 28 }} />
-            </div>
-          </div>
-          </div>
-
-          <ul style={{ float: "right" }}>
-            {ChatBoxList ? 
-            <div className="chatList">
-
-              <>
-                <div className="chatHeader">
-                  <div className="chatSection"> Chat </div>
-                  {/* <div className="closeIco"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div> */}
+          {!ChatBoxList ?
+            <div className="Chatlogo">
+              <div className="pink-circle" onClick={() => setChatBoxList(!ChatBoxList)}>
+                <div className="white-circle">
+                  <MoreHorizIcon style={{ fontSize: 28 }} />
                 </div>
+              </div>
+            </div>
+            : null}
 
-                <div className="AllChatUsers ">
-                  {comboData.map((person, i) => (userId === person.id ? null :
-                    <div key={i}>
-                      <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); statusFalse(person.UChannelId, person.id) }}>
+          <ul >
+            <div className="connectedUsersList">
+              {ChatBoxList ?
+                <div className="chatList">
 
-                        <Badge variant={(person.notificationStatus == "true" && person.id == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster">
-                          <Avatar alt="Srikanth Ganji" sx={{ width: 50, height: 50 }} src={Dhoni} />
-                        </Badge>
+                  <>
+                    <div className="chatHeader">
+                      <div className="chatSection"> Chat </div>
+                      <div className="chatListClose"><CloseIcon onClick={() => setChatBoxList(false)} /></div>
+                      {/* <div className="closeIco"><span className="closeIcon" ><CloseIcon onClick={() => setShowBox(false)} /></span></div> */}
+                    </div>
 
-                        <div className="personModel">
-                          <h4>{person.name}</h4>
-                          <p className="userPara">Des</p>
+                    <div className="AllChatUsers ">
+
+                      <div className={classes.search} id="chatSearch">
+                        <div className={classes.searchIcon}>
+                          <SearchIcon />
                         </div>
+                        <InputBase
+                          placeholder="Search"
+                          classes={{
+                            root: classes.inputRoot,
+                            input: classes.inputInput,
+                          }}
+                          inputProps={{ 'aria-label': 'search' }}
+                        />
                       </div>
-                      <hr className="hrForChat" />
-                    </div>))
-                  }
-                </div>
-              </>
-            </div>
-            : null
-             } 
 
+
+                      {comboData.map((person, i) => (userId === person.id ? null :
+                        <div key={i}>
+                          <div className="chat-sidebar" onClick={() => { showBoxs(i, person.id, person.name, person); scrollToBottom(); statusFalse(person.UChannelId, person.id) }}>
+
+                            {/* <Badge variant={(person.notificationStatus == "true" && person.id == person.sender && person.id != userId) ? "dot" : null} color="info" className="userChatAvaster"> */}
+                            <Avatar alt="Srikanth Ganji" className="userChatAvaster" sx={{ width: 48, height: 48 }} src={Dhoni} />
+                            {/* </Badge> */}
+
+                            <div className="personModel">
+                              <h4>
+                                {person.name}
+                                <span className="numberOfMessages">
+                                  <Badge badgeContent={(person.notificationStatus == "true" && person.id == person.sender && person.id != userId) ? person.chatMsgCount : null} sx={{
+                                    "& .MuiBadge-badge": {
+                                      color: "white",
+                                      backgroundColor: "#ee357e",
+                                      width: "26px",
+                                      height: "21px",
+                                    }
+                                  }}  >
+                                  </Badge>
+                                </span>
+                              </h4>
+                              <p className="userPara">Artist (Hair specialist - NYC)</p>
+                            </div>
+                          </div>
+                          <hr className="hrForChat" />
+                        </div>))
+                      }
+                    </div>
+                  </>
+                </div>
+                : null
+              }
+            </div>
 
             {/* Start Chat with  */}
             {/* <div className="chatList">
@@ -466,7 +576,7 @@ function App() {
             <div>
               {/* <button onClick={() => showBoxs(i, person.id, person.name)}>{person.name}</button> */}
               {showBox ? (
-                <div className="msg_box" style={{ right: '300px' }}>
+                <div className="msg_box" style={{ right: '320px' }}>
                   <div className="msg_head"
                   //  onClick={this.toggle.bind(this)}
                   >
@@ -476,7 +586,7 @@ function App() {
                         {/* {console.log(currentRec.notificationStatus)} */}
                         {currentRec !== undefined &&
                           <div className="modal-body">
-                              <span><Avatar alt="Srikanth Ganji" src={Dhoni} /></span>
+                            <span><Avatar alt="Srikanth Ganji" sx={{ width: 32, height: 32 }} src={Dhoni} /></span>
                           </div>
                         }
                       </b>
@@ -494,8 +604,8 @@ function App() {
 
                   </div>
                   <div style={hidden} className="msg_wrap">
-                    <div className="msg_body" 
-                    onClick = {() => statusFalse(currentRec?.UChannelId, currentRec?.id)}
+                    <div className="msg_body"
+                      onClick={() => statusFalse(currentRec?.UChannelId, currentRec?.id)}
                     // onClick = {(currentRec.notificationStatus == "true") ? () => statusFalse(currentRec?.UChannelId, currentRec?.id) : null}
                     >
 
@@ -506,9 +616,9 @@ function App() {
                           {/* {message.body} */}
                           <Typography component={'span'} variant={'body2'}>
                             <span style={{ display: 'flex', marginTop: '20px' }}>
-                              <span style={{ marginRight: '6px' }}>{message.author === userId ? null : <Avatar alt="Srikanth Ganji" src={Dhoni} />}</span>
+                              <span style={{ marginRight: '6px' }}>{message.author === userId ? null : <Avatar alt="Srikanth Ganji" src={Dhoni} sx={{ width: 32, height: 32 }} />}</span>
                               <span className={message.author === userId ? 'textRight' : 'text'}><span className={message.author === userId ? 'Smsg' : 'Rmsg'}> {message?.body} </span> </span>
-                              <span style={{ marginLeft: '6px' }}>{message.author === userId ? <Avatar alt="Srikanth Ganji" src={Ms} /> : null}</span>
+                              <span style={{ marginLeft: '6px' }}>{message.author === userId ? <Avatar alt="Srikanth Ganji" src={Ms} sx={{ width: 32, height: 32 }} /> : null}</span>
                             </span>
                           </Typography>
                         </div>
@@ -524,14 +634,16 @@ function App() {
                     <InputGroup className="inputGroup">
                       <FormControl
                         className="formControl"
-                        placeholder="Type here!"
+                        placeholder="Type or Ask something "
                         onChange={handleChange}
                         value={messageBody}
                         required
                       // aria-label="Recipient's username with two button addons"
                       />
+                      {/* <img src={smiley} className="emoji" onClick={triggerPicker} /> */}
                       <span className="emoji" onClick={triggerPicker}>😀</span>
-                      <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span>
+                      <img className="send" src={send} onClick={handleSubmit} />
+                      {/* <span className="send"><SendIcon onClick={handleSubmit} style={{ color: 'pink' }} /></span> */}
                     </InputGroup>
                   </div>
                 </div>) : (null)}
