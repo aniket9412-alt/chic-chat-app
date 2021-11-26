@@ -71,6 +71,7 @@ export const getChat = /* GraphQL */ `
       user2
       status
       sender
+      messageCount
       createdAt
       updatedAt
     }
@@ -89,6 +90,7 @@ export const listChats = /* GraphQL */ `
         user2
         status
         sender
+        messageCount
         createdAt
         updatedAt
       }
